@@ -204,6 +204,7 @@ class CombatReady {
   }
 
   static showEndTurnDialog() {
+    console.log('end turn)')
     CombatReady.closeEndTurnDialog().then(() => {
       let d = new Dialog(
         {
@@ -303,7 +304,7 @@ class CombatReady {
     CombatReady.TIMEICO = timeicon;
     CombatReady.TIMECURRENT = 0;
     CombatReady.TIMEMAX = 20;
-    CombatReady.INTERVAL_IDS = [];
+    CombatReady.INTERVALidS = [];
     // sound statics
     CombatReady.TURN_SOUND = "modules/combatready/sounds/turn.wav";
     CombatReady.NEXT_SOUND = "modules/combatready/sounds/next.wav";
@@ -340,7 +341,7 @@ class CombatReady {
         if (data.timetick) CombatReady.TIMECURRENT = data.timetick;
         // if not ticking, start doing so to match the GM
         if (
-          !CombatReady.INTERVAL_IDS.some((e) => {
+          !CombatReady.INTERVALidS.some((e) => {
             return e.name === "clock";
           })
         )
@@ -418,6 +419,7 @@ class CombatReady {
    * Animate the "you're up next" prompt
    */
   static doAnimateNext() {
+    console.log('You are up next');
     if (game.settings.get("combatready", "disablenextup")) {
       return;
     }
@@ -504,9 +506,9 @@ class CombatReady {
 
       if (entry !== undefined) {
         CombatReady.closeEndTurnDialog().then(() => {
-          let isActive = entry.actor?._id === game.users.current.character?._id;
+          let isActive = entry.actor?.id === game.users.current.character?.id;
           let isNext =
-            nxtentry.actor?._id === game.users.current.character?._id;
+            nxtentry.actor?.id === game.users.current.character?.id;
 
           if (isActive) {
             CombatReady.doAnimateTurn();
@@ -536,7 +538,7 @@ class CombatReady {
       game.socket.emit(
         CombatReady.SOCKET,
         {
-          senderId: game.user._id,
+          senderId: game.user.id,
           type: "Number",
           timetick: CombatReady.TIMECURRENT,
         },
@@ -574,15 +576,15 @@ class CombatReady {
       // push GM time
       CombatReady.TIMECURRENT = 0;
       game.socket.emit(CombatReady.SOCKET, {
-        senderId: game.user._id,
+        senderId: game.user.id,
         type: "Number",
         timetick: CombatReady.TIMECURRENT,
       });
       game.settings.set("combatready", "timeractive", true);
     }
 
-    for (let idx = CombatReady.INTERVAL_IDS.length - 1; idx >= 0; --idx) {
-      let interval = CombatReady.INTERVAL_IDS[idx];
+    for (let idx = CombatReady.INTERVALidS.length - 1; idx >= 0; --idx) {
+      let interval = CombatReady.INTERVALidS[idx];
       if (interval.name === "clock") {
         if (game.user.isGM) CombatReady.TIMEFILL.style.width = "0%";
         // be content with a reset clock
@@ -593,7 +595,7 @@ class CombatReady {
     if (!game.paused) {
       // If not a GM, and the actor is hidden, don't show it
       //CombatReady.TIMEFILL.style.width = "0%";
-      CombatReady.INTERVAL_IDS.push({
+      CombatReady.INTERVALidS.push({
         name: "clock",
         id: window.setInterval(CombatReady.timerTick, 1000),
       });
@@ -604,11 +606,11 @@ class CombatReady {
    *
    */
   static timerStop() {
-    for (let idx = CombatReady.INTERVAL_IDS.length - 1; idx >= 0; --idx) {
-      let interval = CombatReady.INTERVAL_IDS[idx];
+    for (let idx = CombatReady.INTERVALidS.length - 1; idx >= 0; --idx) {
+      let interval = CombatReady.INTERVALidS[idx];
       if (interval.name === "clock") {
         window.clearInterval(interval.id);
-        CombatReady.INTERVAL_IDS.splice(idx, 1);
+        CombatReady.INTERVALidS.splice(idx, 1);
         break;
       }
     }
@@ -622,11 +624,11 @@ class CombatReady {
    *
    */
   static timerPause() {
-    for (let idx = CombatReady.INTERVAL_IDS.length - 1; idx >= 0; --idx) {
-      let interval = CombatReady.INTERVAL_IDS[idx];
+    for (let idx = CombatReady.INTERVALidS.length - 1; idx >= 0; --idx) {
+      let interval = CombatReady.INTERVALidS[idx];
       if (interval.name === "clock") {
         window.clearInterval(interval.id);
-        CombatReady.INTERVAL_IDS.splice(idx, 1);
+        CombatReady.INTERVALidS.splice(idx, 1);
         break;
       }
     }
@@ -636,21 +638,21 @@ class CombatReady {
    *
    */
   static timerResume() {
-    for (let idx = CombatReady.INTERVAL_IDS.length - 1; idx >= 0; --idx) {
-      let interval = CombatReady.INTERVAL_IDS[idx];
+    for (let idx = CombatReady.INTERVALidS.length - 1; idx >= 0; --idx) {
+      let interval = CombatReady.INTERVALidS[idx];
       if (interval.name === "clock") return;
     }
 
     // push GM time
     if (game.user.isGM)
       game.socket.emit(CombatReady.SOCKET, {
-        senderId: game.user._id,
+        senderId: game.user.id,
         type: "Number",
         timetick: CombatReady.TIMECURRENT,
       });
 
     if (game.settings.get("combatready", "timeractive"))
-      CombatReady.INTERVAL_IDS.push({
+      CombatReady.INTERVALidS.push({
         name: "clock",
         id: window.setInterval(CombatReady.timerTick, 1000),
       });
@@ -736,6 +738,7 @@ Hooks.on("sidebarCollapse", function (a, collapsed) {
  * Combat update hook
  */
 Hooks.on("updateCombat", function (data, delta) {
+  console.log('updateCombat');
   CombatReady.toggleCheck();
 
   console.log("update combat", data);
